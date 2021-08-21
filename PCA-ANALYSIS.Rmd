@@ -1,0 +1,113 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE, cache=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits = 5)
+#install.packages(c("FactoMineR", "factoextra"))
+#install.packages(c("ggplot2", "gridExtra", "tidyverse"))
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+#install.packages('rmarkdown')
+indata<-read.csv(file.choose(),header=T)
+```
+```{r}
+paper_mat<-indata[ ,1:4]
+paper_mat
+
+# Calculate the mean vector
+mean_vec = colMeans(paper_mat)
+mean_vec
+# Calculate the variance vector
+var_vec = apply(paper_mat, 2, var)
+var_vec
+# Another way of getting the covariance matrix
+covMat = cov(paper_mat)
+covMat
+# Calculate the correlation matrix
+corMat = cor(paper_mat)
+corMat
+# Scaled data
+scaled_indata = scale(paper_mat)
+eigenRes = eigen(corMat)
+eigenRes
+```
+```{r}
+PVE <- eigenRes$values / sum(eigenRes$values)
+# Percent variance explained
+PVE
+
+
+# PVE (aka scree) plot
+PVEplot <- qplot(c(1:4), PVE) +  
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("PVE") +
+  ggtitle("Scree Plot") +
+  ylim(0, 1)
+PVEplot
+
+#Cumulative percent variance explained
+cumsum(PVE)
+# Cumulative PVE plot
+cumPVE <- qplot(c(1:4), cumsum(PVE)) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab(NULL) + 
+  ggtitle("Cumulative Scree Plot") +
+  ylim(0,1)
+
+cumPVE
+```
+```{r}
+evecs = -eigenRes$vectors[,1:2]
+colnames(evecs) = c("PC1", "PC2")
+row.names(evecs) = colnames(scaled_indata)
+evecs
+PC1 <- as.matrix(scaled_indata)%*% evecs[,1]
+PC2 <- as.matrix(scaled_indata)%*% evecs[,2]
+PC1
+PC <- data.frame(Week = row.names(indata), PC1, PC2)
+head(PC)
+
+```
+```{r components description}```
+#The number of  components to effectively summarize the variability is one.ie..PC1
+#As both in PVE and cumPVE,the bent or elbow is observed at 2nd component.All factors plotted after factor 3 would not be of high significance .
+```{PCA analysis}```
+#PCA has been applied and found useful in very many disciplines.
+#The first two PCs account for 95.99% and 3.51%, respectively, of the total variation in the datasets
+#All of the loadings in the first PC is a weighted average of all variables and all the values in PC1 are positive hence showing positive correlation.
+```{r plot}
+ggplot(PC, aes(PC1, PC2)) + 
+  modelr::geom_ref_line(h = 0) +
+  modelr::geom_ref_line(v = 0) +
+  geom_text(aes(label = Week), size = 3) +
+  xlab("First Principal Component") + 
+  ylab("Second Principal Component") + 
+  ggtitle("First Two Principal Components")
+summary(evecs)
+```
+```{r strength index}```
+The proportion of variance explained and the scree plot(PVEplot and CVE) depict that first principal component PC1 has equal variable load and strong corelation between variable and first principal component,hence it high strength index . 
+
+
+```{r}
+library("FactoMineR")
+library("factoextra")
+scaled_indata.pca<-prcomp(scaled_indata,center = TRUE)
+summary(scaled_indata.pca)
+res.pca<-PCA(scaled_indata, scale.unit = TRUE, ncp = 5)
+fviz_eig(res.pca, addlabels = TRUE, ylim = c(0, 50))
+fviz_pca_ind(res.pca)
+```
+
+```r{outliers}```
+#As per graph :58,59, 60 and 61 seems to be little distant but not potential outliers.
+
+
+
